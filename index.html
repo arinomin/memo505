@@ -125,7 +125,7 @@
             color: #666;
             display: block;
         }
-        .param-input input {
+        .param-input input, .param-input select {
             width: 100%;
             padding: 0.3rem;
             border: 1px solid #ccc;
@@ -174,7 +174,7 @@
         .preset-actions {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.5rem; /* Reduced gap */
         }
         .preset-actions span {
             font-size: 0.8rem;
@@ -215,37 +215,61 @@
             flex-grow: 1;
             margin-bottom: 0;
         }
-        .save-button {
-            background-color: #007bff;
+        /* Button Styles */
+        .button {
             color: white;
             padding: 0.75rem 1.5rem;
             border: none;
             border-radius: 6px;
             font-size: 1rem;
             cursor: pointer;
-            /* margin-top is removed and handled by save-section gap */
             transition: background-color 0.2s;
-            white-space: nowrap; /* Prevents button text from wrapping */
+            white-space: nowrap;
         }
-        .save-button:hover {
-            background-color: #0056b3;
-        }
-        .save-button:disabled {
+        .button:disabled {
             background-color: #ccc;
             cursor: not-allowed;
         }
+        .button-sm {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+
+        .save-button {
+            background-color: #007bff;
+        }
+        .save-button:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        
+        .cancel-button {
+            background-color: #6c757d;
+        }
+        .cancel-button:hover {
+            background-color: #5a6268;
+        }
+
         .delete-button {
             background-color: #dc3545;
-            color: white;
-            padding: 0.3rem 0.6rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: background-color 0.2s;
         }
         .delete-button:hover {
             background-color: #c82333;
+        }
+        
+        .edit-button {
+            background-color: #ffc107;
+            color: #1c1e21;
+        }
+        .edit-button:hover {
+            background-color: #e0a800;
+        }
+
+        .duplicate-button {
+            background-color: #17a2b8;
+        }
+        .duplicate-button:hover {
+            background-color: #138496;
         }
     </style>
 </head>
@@ -361,7 +385,7 @@
 
         // --- Components ---
 
-        function PresetItem({ preset, onDelete }) {
+        function PresetItem({ preset, onDelete, onEdit, onDuplicate }) {
             const [isExpanded, setIsExpanded] = useState(false);
 
             return (
@@ -371,7 +395,9 @@
                             <strong>{preset.name}</strong> ({preset.type})
                         </div>
                         <div className="preset-actions">
-                            <button onClick={(e) => { e.stopPropagation(); onDelete(preset.id); }} className="delete-button">削除</button>
+                            <button onClick={(e) => { e.stopPropagation(); onDuplicate(preset); }} className="button button-sm duplicate-button">複製</button>
+                            <button onClick={(e) => { e.stopPropagation(); onEdit(preset); }} className="button button-sm edit-button">編集</button>
+                            <button onClick={(e) => { e.stopPropagation(); onDelete(preset.id); }} className="button button-sm delete-button">削除</button>
                             <span>{isExpanded ? '閉じる' : '開く'}</span>
                         </div>
                     </div>
@@ -383,7 +409,7 @@
                                         <h4>FX {slotId}: {slotData.effect}</h4>
                                         <ul className="param-list">
                                             {Object.entries(slotData.params)
-                                                .filter(([, value]) => value.trim() !== '')
+                                                .filter(([, value]) => String(value).trim() !== '')
                                                 .map(([param, value]) => (
                                                     <li key={param}>
                                                         <span>{param}:</span> {value}
@@ -399,7 +425,7 @@
             );
         }
 
-        function PresetList({ presets, onFilter, onDelete }) {
+        function PresetList({ presets, onFilter, onDelete, onEdit, onDuplicate }) {
             const [searchTerm, setSearchTerm] = useState('');
 
             const handleSearchChange = (e) => {
@@ -432,6 +458,8 @@
                                     key={p.id}
                                     preset={p}
                                     onDelete={onDelete}
+                                    onEdit={onEdit}
+                                    onDuplicate={onDuplicate}
                                 />
                             ))}
                         </ul>
@@ -449,7 +477,11 @@
                 const baseParams = EFFECT_PARAMETERS[newEffect] || [];
                 const seqParams = SEQUENCER_EFFECTS.includes(newEffect) ? SEQUENCER_PARAMETERS : [];
                 [...baseParams, ...seqParams].forEach(p => {
-                    newParams[p] = '';
+                    if (['SW', 'SYNC', 'RETRIG'].includes(p)) {
+                        newParams[p] = 'OFF';
+                    } else {
+                        newParams[p] = '';
+                    }
                 });
                 onSlotChange(slotId, { effect: newEffect, params: newParams });
             };
@@ -492,16 +524,32 @@
                         <>
                             <hr className="param-divider" />
                             <div className="param-grid">
-                                {seqParamsTop.map(paramName => (
-                                    <div key={paramName} className="param-input">
-                                        <label>{paramName}</label>
-                                        <input
-                                            type="text"
-                                            value={params[paramName] || ''}
-                                            onChange={(e) => handleParamChange(paramName, e.target.value)}
-                                        />
-                                    </div>
-                                ))}
+                                {seqParamsTop.map(paramName => {
+                                    if (['SW', 'SYNC', 'RETRIG'].includes(paramName)) {
+                                        return (
+                                            <div key={paramName} className="param-input">
+                                                <label>{paramName}</label>
+                                                <select
+                                                    value={params[paramName] || 'OFF'}
+                                                    onChange={(e) => handleParamChange(paramName, e.target.value)}
+                                                >
+                                                    <option value="OFF">OFF</option>
+                                                    <option value="ON">ON</option>
+                                                </select>
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <div key={paramName} className="param-input">
+                                            <label>{paramName}</label>
+                                            <input
+                                                type="text"
+                                                value={params[paramName] || ''}
+                                                onChange={(e) => handleParamChange(paramName, e.target.value)}
+                                            />
+                                        </div>
+                                    );
+                                })}
                             </div>
                             <div className="param-grid" style={{marginTop: '0.75rem'}}>
                                 {seqParamsGrid.map(paramName => (
@@ -521,15 +569,43 @@
             );
         }
 
-        function PresetForm({ onSave }) {
+        function PresetForm({ onSave, editingPreset, onCancelEdit }) {
             const [presetName, setPresetName] = useState('');
-            const [presetType, setPresetType] = useState('TRACK FX');
+            const [presetType, setPresetType] = useState('INPUT FX');
             const [fxSlots, setFxSlots] = useState({
                 A: { effect: null, params: {} },
                 B: { effect: null, params: {} },
                 C: { effect: null, params: {} },
                 D: { effect: null, params: {} },
             });
+            
+            const isEditing = editingPreset && editingPreset.id;
+            const isDuplicating = editingPreset && !editingPreset.id;
+
+            useEffect(() => {
+                if (editingPreset) {
+                    setPresetName(editingPreset.name || '');
+                    setPresetType(editingPreset.type || 'INPUT FX');
+                    // Deep copy slots to avoid direct state mutation
+                    setFxSlots(JSON.parse(JSON.stringify(editingPreset.slots || {
+                        A: { effect: null, params: {} },
+                        B: { effect: null, params: {} },
+                        C: { effect: null, params: {} },
+                        D: { effect: null, params: {} },
+                    })));
+                } else {
+                    // Reset form to initial state
+                    setPresetName('');
+                    setPresetType('INPUT FX');
+                    setFxSlots({
+                        A: { effect: null, params: {} },
+                        B: { effect: null, params: {} },
+                        C: { effect: null, params: {} },
+                        D: { effect: null, params: {} },
+                    });
+                }
+            }, [editingPreset]);
+
 
             const availableEffects = useMemo(() => {
                 return presetType === 'INPUT FX' ? INPUT_FX_LIST : TRACK_FX_LIST;
@@ -558,27 +634,25 @@
 
             const handleSave = () => {
                 const presetData = {
+                    id: isEditing ? editingPreset.id : null, // Pass ID if editing
                     name: presetName,
                     type: presetType,
                     slots: fxSlots
                 };
                 onSave(presetData);
-                // Reset form
-                setPresetName('');
-                setPresetType('TRACK FX');
-                setFxSlots({
-                    A: { effect: null, params: {} },
-                    B: { effect: null, params: {} },
-                    C: { effect: null, params: {} },
-                    D: { effect: null, params: {} },
-                });
             };
             
             const isSaveDisabled = !presetName.trim() || Object.values(fxSlots).every(slot => !slot.effect);
+            
+            const getTitle = () => {
+                if (isEditing) return 'プリセットを編集';
+                if (isDuplicating) return 'プリセットを複製';
+                return '新規プリセット作成';
+            }
 
             return (
                 <div className="form-container">
-                    <h2>新規プリセット作成</h2>
+                    <h2>{getTitle()}</h2>
                     <div className="form-group">
                         <label>プリセット種別</label>
                         <div className="radio-group">
@@ -625,9 +699,14 @@
                                 placeholder="例: イントロメロディ用FX"
                             />
                         </div>
-                        <button onClick={handleSave} disabled={isSaveDisabled} className="save-button">
-                            プリセットを保存
+                        <button onClick={handleSave} disabled={isSaveDisabled} className="button save-button">
+                            {isEditing ? '更新' : 'プリセットを保存'}
                         </button>
+                        {editingPreset && (
+                             <button onClick={onCancelEdit} className="button cancel-button">
+                                キャンセル
+                            </button>
+                        )}
                     </div>
                 </div>
             );
@@ -638,16 +717,39 @@
         function App() {
             const [presets, setPresets] = useLocalStorage('rc505-presets', []);
             const [searchTerm, setSearchTerm] = useState('');
+            const [presetForForm, setPresetForForm] = useState(null); // For editing or duplicating
 
-            const handleSavePreset = (newPreset) => {
-                const presetWithId = { ...newPreset, id: Date.now() };
-                setPresets(prevPresets => [...prevPresets, presetWithId]);
+            const handleSavePreset = (presetData) => {
+                if (presetData.id) {
+                    // Update existing preset
+                    setPresets(prev => prev.map(p => p.id === presetData.id ? presetData : p));
+                } else {
+                    // Save new preset
+                    const presetWithId = { ...presetData, id: Date.now() };
+                    setPresets(prev => [...prev, presetWithId]);
+                }
+                setPresetForForm(null); // Clear form after saving
             };
 
             const handleDeletePreset = (idToDelete) => {
                 if (window.confirm('このプリセットを削除してもよろしいですか？')) {
                     setPresets(prevPresets => prevPresets.filter(p => p.id !== idToDelete));
                 }
+            };
+            
+            const handleEdit = (preset) => {
+                setPresetForForm(preset);
+                window.scrollTo(0, 0); // Scroll to top to see the form
+            };
+
+            const handleDuplicate = (preset) => {
+                const duplicatedPreset = { ...preset, id: null, name: `${preset.name} (コピー)` };
+                setPresetForForm(duplicatedPreset);
+                window.scrollTo(0, 0); // Scroll to top to see the form
+            };
+            
+            const handleCancelEdit = () => {
+                setPresetForForm(null);
             };
 
             const filteredPresets = useMemo(() => {
@@ -660,11 +762,17 @@
                 <div>
                     <h1>RC505mk2 エフェクトメモ</h1>
                     <div className="main-content">
-                        <PresetForm onSave={handleSavePreset} />
+                        <PresetForm 
+                            onSave={handleSavePreset} 
+                            editingPreset={presetForForm}
+                            onCancelEdit={handleCancelEdit}
+                        />
                         <PresetList 
                             presets={filteredPresets} 
                             onFilter={setSearchTerm}
                             onDelete={handleDeletePreset}
+                            onEdit={handleEdit}
+                            onDuplicate={handleDuplicate}
                         />
                     </div>
                 </div>

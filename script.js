@@ -275,7 +275,7 @@ function EffectSlot({slotId, availableEffects, slotData, onSlotChange}) {
                 for (let i = -12; i <= 12; i++) options.push(<option key={i} value={i}>{i > 0 ? `+${i}` : i}</option>);
                 break;
             case "OSC BOT":
-                const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+                const notes = ["C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B"];
                 for (let oct = 1; oct <= 9; oct++) {
                     for (const note of notes) {
                         const val = `${note}${oct}`;

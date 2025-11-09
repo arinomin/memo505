@@ -271,6 +271,34 @@
         .duplicate-button:hover {
             background-color: #138496;
         }
+
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .io-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .import-button-label {
+            background-color: #28a745;
+            color: white;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: inline-block; /* To make padding and other properties work */
+            line-height: 1.5; /* Align text vertically */
+        }
+        .import-button-label:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 <body>
@@ -425,12 +453,24 @@
             );
         }
 
-        function PresetList({ presets, onFilter, onDelete, onEdit, onDuplicate }) {
+        function PresetList({ presets, onFilter, onDelete, onEdit, onDuplicate, onExport, onImport }) {
             const [searchTerm, setSearchTerm] = useState('');
+            const importInputRef = React.useRef(null);
 
             const handleSearchChange = (e) => {
                 setSearchTerm(e.target.value);
                 onFilter(e.target.value);
+            };
+
+            const handleImportClick = () => {
+                // Trigger the hidden file input
+                importInputRef.current.click();
+            };
+
+            const handleFileChange = (e) => {
+                onImport(e);
+                // Reset the input value to allow importing the same file again
+                e.target.value = null; 
             };
 
             const presetsToShow = searchTerm ? presets : presets.sort((a, b) => b.id - a.id);
@@ -438,7 +478,20 @@
 
             return (
                 <div className="list-container">
-                    <h2>保存済みプリセット</h2>
+                    <div className="list-header">
+                        <h2>保存済みプリセット</h2>
+                        <div className="io-buttons">
+                            <input 
+                                type="file" 
+                                ref={importInputRef} 
+                                style={{ display: 'none' }} 
+                                accept=".json"
+                                onChange={handleFileChange}
+                            />
+                            <label onClick={handleImportClick} className="import-button-label">インポート</label>
+                            <button onClick={onExport} className="button button-sm">エクスポート</button>
+                        </div>
+                    </div>
                     <div className="form-group">
                         <input
                             type="text"
@@ -752,6 +805,48 @@
                 setPresetForForm(null);
             };
 
+            const handleExportData = () => {
+                if (presets.length === 0) {
+                    alert('エクスポートするプリセットがありません。');
+                    return;
+                }
+                const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+                    JSON.stringify(presets, null, 2)
+                )}`;
+                const link = document.createElement("a");
+                link.href = jsonString;
+                const date = new Date();
+                const formattedDate = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
+                link.download = `rc505_presets_${formattedDate}.json`;
+                link.click();
+            };
+
+            const handleImportData = (event) => {
+                const fileReader = new FileReader();
+                const file = event.target.files[0];
+
+                if (!file) return;
+
+                fileReader.readAsText(file, "UTF-8");
+                fileReader.onload = e => {
+                    try {
+                        const importedPresets = JSON.parse(e.target.result);
+                        
+                        // Basic validation
+                        if (!Array.isArray(importedPresets)) {
+                            throw new Error("JSONファイルはプリセットの配列である必要があります。");
+                        }
+                        
+                        if (window.confirm('現在のプリセットをインポートしたデータで上書きしますか？（現在のデータは失われます）')) {
+                            setPresets(importedPresets);
+                            alert('プリセットが正常にインポートされました。');
+                        }
+                    } catch (error) {
+                        alert(`インポートに失敗しました。\nエラー: ${error.message}\n\n有効なJSONファイルを選択してください。`);
+                    }
+                };
+            };
+
             const filteredPresets = useMemo(() => {
                 return presets.filter(p => 
                     p.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -773,6 +868,8 @@
                             onDelete={handleDeletePreset}
                             onEdit={handleEdit}
                             onDuplicate={handleDuplicate}
+                            onExport={handleExportData}
+                            onImport={handleImportData}
                         />
                     </div>
                 </div>

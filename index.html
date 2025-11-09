@@ -272,6 +272,13 @@
             background-color: #138496;
         }
 
+        .export-button {
+            background-color: #28a745;
+        }
+        .export-button:hover {
+            background-color: #218838;
+        }
+
         .list-header {
             display: flex;
             justify-content: space-between;
@@ -489,7 +496,7 @@
                                 onChange={handleFileChange}
                             />
                             <label onClick={handleImportClick} className="import-button-label">インポート</label>
-                            <button onClick={onExport} className="button button-sm">エクスポート</button>
+                            <button onClick={onExport} className="button button-sm export-button">エクスポート</button>
                         </div>
                     </div>
                     <div className="form-group">

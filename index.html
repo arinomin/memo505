@@ -441,7 +441,7 @@
             "TREMOLO": ["RATE", "DEPTH", "WAVEFORM"],
             "VIBRATO": ["RATE", "DEPTH", "COLOR", "D_LEVEL", "E_LEVEL"],
             "PATTERN SLICER": ["RATE", "DUTY", "ATTACK", "PATTERN", "DEPTH", "THRESHOLD", "GAIN"],
-            "STEP SLICER": ["RATE", "DEPTH", "THRESHOLD", "GAIN"],
+            "STEP SLICER": ["RATE", "DEPTH", "THRESHOLD", "GAIN", "STEP MAX"],
             "DELAY": ["TIME", "FEEDBACK", "D_LEVEL", "LOW_CUT", "HIGH_CUT", "E_LEVEL"],
             "PANNING DELAY": ["TIME", "FEEDBACK", "D_LEVEL", "LOW_CUT", "HIGH_CUT", "E_LEVEL"],
             "REVERSE DELAY": ["TIME", "FEEDBACK", "D_LEVEL", "LOW_CUT", "HIGH_CUT", "E_LEVEL"],
@@ -624,15 +624,40 @@
             const handleEffectChange = (e) => {
                 const newEffect = e.target.value;
                 const newParams = {};
+                
+                // Set base parameters
                 const baseParams = EFFECT_PARAMETERS[newEffect] || [];
-                const seqParams = SEQUENCER_EFFECTS.includes(newEffect) ? SEQUENCER_PARAMETERS : [];
-                [...baseParams, ...seqParams].forEach(p => {
-                    if (['SW', 'SYNC', 'RETRIG'].includes(p)) {
-                        newParams[p] = 'OFF';
-                    } else {
-                        newParams[p] = '';
-                    }
+                baseParams.forEach(p => {
+                    newParams[p] = '';
                 });
+
+                // Set sequencer parameters if applicable
+                if (SEQUENCER_EFFECTS.includes(newEffect)) {
+                    const seqParams = SEQUENCER_PARAMETERS;
+                    let seqValDefault = 0;
+                    if (newEffect === "TRANSPOSE") seqValDefault = -12;
+                    else if (newEffect === "OSCBOT") seqValDefault = "C1";
+                    else if (newEffect === "MANUAL PAN") seqValDefault = "L50";
+
+                    seqParams.forEach(p => {
+                        if (['SW', 'SYNC', 'RETRIG'].includes(p)) {
+                            newParams[p] = 'OFF';
+                        } else if (p.startsWith('SEQ VAL')) {
+                            newParams[p] = seqValDefault;
+                        } else {
+                            newParams[p] = '';
+                        }
+                    });
+                }
+
+                // Special handling for STEP SLICER
+                if (newEffect === "STEP SLICER") {
+                    for (let i = 1; i <= 16; i++) {
+                        newParams[`STEP LEN${i}`] = 50;
+                        newParams[`STEP LVL${i}`] = 100;
+                    }
+                }
+                
                 onSlotChange(slotId, {effect: newEffect, params: newParams});
             };
 
@@ -646,6 +671,41 @@
             const seqParamsTop = useMemo(() => seqParams.slice(0, 6), [seqParams]);
             const seqParamsGrid = useMemo(() => seqParams.slice(6), [seqParams]);
 
+
+            const getSeqValOptions = (effect) => {
+                const options = [];
+                switch (effect) {
+                    case "TRANSPOSE":
+                        for (let i = -12; i <= 12; i++) options.push(<option key={i} value={i}>{i > 0 ? `+${i}` : i}</option>);
+                        break;
+                    case "OSCBOT":
+                        const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+                        for (let oct = 1; oct <= 9; oct++) {
+                            for (const note of notes) {
+                                const val = `${note}${oct}`;
+                                options.push(<option key={val} value={val}>{val}</option>);
+                                if (val === "G9") break;
+                            }
+                        }
+                        break;
+                    case "MANUAL PAN":
+                        for (let i = -50; i <= 50; i++) {
+                            let val;
+                            if (i === 0) val = "CENTER";
+                            else if (i < 0) val = `L${Math.abs(i)}`;
+                            else val = `R${i}`;
+                            options.push(<option key={val} value={val}>{val}</option>);
+                        }
+                        break;
+                    default: // For HPF, LPF, BPF, etc.
+                        for (let i = 0; i <= 100; i++) options.push(<option key={i} value={i}>{i}</option>);
+                        break;
+                }
+                return options;
+            };
+
+            const isSeqValEffect = SEQUENCER_EFFECTS.includes(effect);
+            const seqValOptions = isSeqValEffect ? getSeqValOptions(effect) : null;
 
             return (
                 <div className="effect-slot">
@@ -703,6 +763,47 @@
                             </div>
                             <div className="param-grid" style={{marginTop: '0.75rem'}}>
                                 {seqParamsGrid.map(paramName => (
+                                     <div key={paramName} className="param-input">
+                                        <label>{paramName}</label>
+                                        {isSeqValEffect ? (
+                                            <select
+                                                value={params[paramName] || ''}
+                                                onChange={(e) => handleParamChange(paramName, e.target.value)}
+                                            >
+                                                {seqValOptions}
+                                            </select>
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                value={params[paramName] || ''}
+                                                onChange={(e) => handleParamChange(paramName, e.target.value)}
+                                            />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
+
+                    {effect === "STEP SLICER" && (
+                        <>
+                            <hr className="param-divider" />
+                            <h4>STEP LEN (0-100, 初期値: 50)</h4>
+                            <div className="param-grid">
+                                {Array.from({length: 16}, (_, i) => `STEP LEN${i + 1}`).map(paramName => (
+                                    <div key={paramName} className="param-input">
+                                        <label>{paramName}</label>
+                                        <input
+                                            type="text"
+                                            value={params[paramName] || ''}
+                                            onChange={(e) => handleParamChange(paramName, e.target.value)}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                            <h4>STEP LVL (0-100, 初期値: 100)</h4>
+                            <div className="param-grid" style={{marginTop: '0.75rem'}}>
+                                {Array.from({length: 16}, (_, i) => `STEP LVL${i + 1}`).map(paramName => (
                                     <div key={paramName} className="param-input">
                                         <label>{paramName}</label>
                                         <input

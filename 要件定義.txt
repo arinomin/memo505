@@ -1,0 +1,174 @@
+### **RC505mk2 エフェクトメモ帳 要件定義書**
+
+#### **1. 概要・目的**
+このアプリケーションは、**RC505mk2を使って作曲をするアーティスト（ルーパー）**が抱える「**複雑で膨大なエフェクト設定（INPUT/TRACK FX、FX A〜D、各種パラメータ）のメモが非常に面倒である**」という課題を解決します。
+
+あらかじめRC505mk2のエフェクト選択肢を用意し、スマホやPCから直感的にエフェクト設定を記録できる「デジタルメモ帳」を提供することで、**作曲の効率を格段に上げる**ことを目的とします。
+
+#### **2. 利用者と役割**
+| 役割 | 説明 | 主な権限 |
+| :--- | :--- | :--- |
+| **ルーパー** | RC505mk2で作曲するアーティスト本人。このアプリの唯一の利用者。 | ・自身のエフェクトプリセットの作成<br>・プリセットの保存<br>・保存したプリセットの閲覧と検索 |
+
+#### **3. 機能要件**
+
+* **機能1: プリセット作成機能**
+    * ユーザーは、まず「INPUT FX用」か「TRACK FX用」かを選択します。
+    * 選択後、FX A、FX B、FX C、FX D の4つのスロットが表示されます。
+    * 各スロットで、セレクトボックス（ドロップダウンリスト）から使用するエフェクトを選択します。
+    * エフェクトを選択すると、そのエフェクト専用のパラメータ名と、値を入力するためのテキストボックスが自動で表示されます。
+    * **（ルール1）:** 「INPUT FX」を選択した場合、`BEAT SCATTER`, `BEAT REPEAT`, `BEAT SHIFT`, `VINYL FLICK` を除く**51種類**のエフェクトが選択肢に表示されます。（詳細は「6. 補足」参照）
+    * **（ルール2）:** 「TRACK FX」を選択した場合、**55種類**すべてのエフェクトが選択肢に表示されます。（詳細は「6. 補足」参照）
+    * **（ルール3）:** 特定の15種類のエフェクトが選択された場合、通常のパラメータに加え、**22個のシーケンサー用パラメータ**が自動で追加表示されます。（詳細は「6. 補足」参照）
+
+* **機能2: プリセット保存機能**
+    * ユーザーは、設定したFX A〜Dの組み合わせ（とパラメータ値）を、1つの「プリセット」として保存できます。
+    * 保存時、そのプリセットに「プリセット名」（例：「あの曲のイントロ用」）を自由に設定できます。
+    * **（ルール4）:** FX A〜Dの4つのスロットのうち、**少なくとも1つ**のエフェクトが設定されていれば保存可能です。（4つ全てが空の場合は保存できません）
+
+* **機能3: プリセット閲覧・検索機能**
+    * 保存したプリセットは、一覧画面で確認できます。
+    * 一覧画面では、INPUT用/TRACK用の区別なく、すべてのプリセットが「プリセット名」でリスト表示されます。
+    * 一覧画面には**検索ボックス**があり、「プリセット名」の一部を入力することで、目的のプリセットを絞り込むことができます。
+
+#### **4. データ要件**
+このアプリは、「1つのプリセット」を単位として以下のデータを保存します。
+
+* プリセット名（ユーザーが入力）
+* プリセットの種類（「INPUT FX」 or 「TRACK FX」）
+* FX A: 選択したエフェクト名
+* FX A: 入力した全パラメータの値（パラメータ名と値のセット）
+* FX B: 選択したエフェクト名
+* FX B: 入力した全パラメータの値
+* FX C: 選択したエフェクト名
+* FX C: 入力した全パラメータの値
+* FX D: 選択したエフェクト名
+* FX D: 入力した全パラメータの値
+
+#### **5. 対象外とする機能（スコープ）**
+以下の機能は、今回の開発範囲には含めません。
+
+* 他人のプリセットを閲覧・ダウンロードする機能
+* 作成したプリセットをSNSやURLで他者に共有する機能
+* 一度保存したプリセットの種類（例：「INPUT FX」用から「TRACK FX」用）を後から変更する機能
+* プリセット一覧画面で、リストの順番を任意に並び替える機能
+
+---
+
+#### **6. 補足: 対象エフェクトとパラメータ定義**
+
+アプリ内で扱うエフェクトおよびパラメータの定義です。
+
+##### **6-1. エフェクトの分類**
+
+* **TRACK FX 専用エフェクト (4種類):**
+    * 以下の4種類は、「TRACK FX用」プリセット作成時に**のみ**選択肢に表示されます。
+    * `BEAT SCATTER`
+    * `BEAT REPEAT`
+    * `BEAT SHIFT`
+    * `VINYL FLICK`
+
+* **INPUT FX / TRACK FX 共通エフェクト (51種類):**
+    * 以下の51種類は、INPUT FX用とTRACK FX用の両方で選択可能です。
+
+##### **6-2. シーケンサー・パラメータ**
+
+* **対象エフェクト (15種類):**
+    * 以下の15種類のエフェクトが選択された場合、通常のパラメータに加え、後述の「シーケンサー・パラメータ」22個が**追加で表示**されます。
+    * `LPF`
+    * `HPF`
+    * `BPF`
+    * `PHASER`
+    * `FLANGER`
+    * `SYNTH`
+    * `RING MOD`
+    * `TRANSPOSE`
+    * `PITCH BEND`
+    * `OSC BOT`
+    * `ISOLATOR`
+    * `OCTAVE`
+    * `MANUAL PAN`
+    * `TREMOLO`
+    * `VIBRATO`
+
+* **シーケンサー・パラメータ (22個):**
+    * `SW`
+    * `SYNC`
+    * `RETRIG`
+    * `TARGET`
+    * `SEQ RATE`
+    * `SEQ MAX`
+    * `SEQ VAL1`
+    * `SEQ VAL2`
+    * `SEQ VAL3`
+    * `SEQ VAL4`
+    * `SEQ VAL5`
+    * `SEQ VAL6`
+    * `SEQ VAL7`
+    * `SEQ VAL8`
+    * `SEQ VAL9`
+    * `SEQ VAL10`
+    * `SEQ VAL11`
+    * `SEQ VAL12`
+    * `SEQ VAL13`
+    * `SEQ VAL14`
+    * `SEQ VAL15`
+    * `SEQ VAL16`
+
+##### **6-3. エフェクト・パラメータ一覧 (全55種)**
+
+* **LPF:** `RATE`, `DEPTH`, `RESONANCE`, `CUTOFF`, `STEP_RATE`
+* **BPF:** `RATE`, `DEPTH`, `RESONANCE`, `CUTOFF`, `STEP_RATE`
+* **HPF:** `RATE`, `DEPTH`, `RESONANCE`, `CUTOFF`, `STEP_RATE`
+* **PHASER:** `RATE`, `DEPTH`, `RESONANCE`, `MANUAL`, `STEP_RATE`, `D_LEVEL`, `E_LEVEL`, `STAGE`
+* **FLANGER:** `RATE`, `DEPTH`, `RESONANCE`, `MANUAL`, `STEP_RATE`, `D_LEVEL`, `E_LEVEL`, `SEPARATION`
+* **SYNTH:** `FREQUENCY`, `RESONANCE`, `DECAY`, `BALANCE`
+* **LO-FI:** `BITDEPTH`, `SAMPLERATE`, `BALANCE`
+* **RADIO:** `LOFI`, `LEVEL`
+* **RINGMOD:** `FREQUENCY`, `BALANCE`, `MODE`
+* **G2B:** `BALANCE`, `MODE`
+* **SUSTAINER:** `ATTACK`, `RELEASE`, `LEVEL`, `LOW_GAIN`, `HI_GAIN`, `SUSTAIN`
+* **AUTO RIFF:** `PHARASE`, `TEMPO`, `HOLD`, `ATTACK`, `LOOP`, `KEY`, `BALANCE`
+* **SLOW GEAR:** `SENS`, `RISE_TIME`, `LEVEL`, `MODE`
+* **TRANSPOSE:** `TRANS`, `MODE`
+* **PITCH BEND:** `PITCH`, `BEND`, `MODE`
+* **ROBOT:** `ROBOT_NOTE`, `FORMANT`, `MODE`
+* **ELECTRIC:** `SHIFT`, `FORMANT`, `SPEED`, `STABILITY`, `SCALE`
+* **HRM MANUAL:** `VOICE`, `FORMANT`, `PAN`, `KEY`, `D_LEVEL`, `HRM_LEVEL`
+* **HRM AUTO(M):** `VOICE`, `FORMANT`, `PAN`, `HRM_MODE`, `KEY`, `D_LEVEL`, `E_LEVEL`
+* **VOCODER:** `CARRIER`, `TONE`, `ATTACK`, `MOD_SENS`, `CARRIER_THRU`, `BALANCE`
+* **OSC VOC(M):** `CARRIER`, `TONE`, `ATTACK`, `OCTAVE`, `MOD_SENS`, `RELEASE`, `BALANCE`
+* **OSC BOT:** `OSC`, `TONE`, `ATTACK`, `NOTE`, `MOD_SENS`, `BALANCE`
+* **PREAMP:** `AMP_TYPE`, `SPK_TYPE`, `GAIN`, `T_COMP`, `BASS`, `MIDDLE`, `TREBLE`, `PRESENCE`, `MIC_TYPE`, `MIC_DIS`, `MIC_POS`, `E_LEVEL`
+* **DIST:** `TYPE`, `TONE`, `DIST`, `D_LEVEL`, `E_LEVEL`
+* **DYNAMICS:** `TYPE`, `DYNAMICS`
+* **EQ:** `LOW_GAIN`, `HI_GAIN`, `LO_MID_FREQ`, `LO_MID_Q`, `LO_MID_GAIN`, `HIGH_MID_FREQ`, `HIGH_MID_Q`, `HIGH_MID_GAIN`, `LEVEL`
+* **ISOLATOR:** `BAND`, `RATE`, `BAND_LEVEL`, `DEPTH`, `STEP_RATE`, `WAVE_FORM`
+* **OCTAVE:** `OCTAVE`, `MODE`, `OCTAVE_LEVEL`
+* **AUTO PAN:** `RATE`, `WAVEFORM`, `DEPTH`, `INIT_PHASE`, `STEP_RATE`
+* **MANUAL PAN:** `POSITION`
+* **STEREO ENHANCE:** `LO_CUT`, `HI_CUT`, `ENHANCE`
+* **TREMOLO:** `RATE`, `DEPTH`, `WAVEFORM`
+* **VIBRATO:** `RATE`, `DEPTH`, `COLOR`, `D_LEVEL`, `E_LEVEL`
+* **PATTERN SLICER:** `RATE`, `DUTY`, `ATTACK`, `PATTERN`, `DEPTH`, `THRESHOLD`, `GAIN`
+* **STEP SLICER:** `RATE`, `DEPTH`, `THRESHOLD`, `GAIN`
+* **DELAY:** `TIME`, `FEEDBACK`, `D_LEVEL`, `LOW_CUT`, `HIGH_CUT`, `E_LEVEL`
+* **PANNING DELAY:** `TIME`, `FEEDBACK`, `D_LEVEL`, `LOW_CUT`, `HIGH_CUT`, `E_LEVEL`
+* **REVERSE DELAY:** `TIME`, `FEEDBACK`, `D_LEVEL`, `LOW_CUT`, `HIGH_CUT`, `E_LEVEL`
+* **MOD DELAY:** `TIME`, `FEEDBACK`, `MOD_DEPTH`, `D_LEVEL`, `LOW_CUT`, `HIGH_CUT`, `E_LEVEL`
+* **TYPE ECHO 1:** `REPEAT_TIME`, `INTENSITY`, `D_LEVEL`, `BASS`, `TREBLE`, `E_LEVEL`
+* **TYPE ECHO 2:** `TIME`, `FEEDBACK`, `D_LEVEL`, `LOW_CUT`, `HIGH_CUT`, `E_LEVEL`
+* **GNR DELAY:** `TIME`, `FEEDBACK`, `E_LEVEL`
+* **WARP:** `LEVEL`
+* **TWIST:** `RELEASE`, `RISE`, `FALL`, `LEVEL`
+* **ROLL 1:** `TIME`, `FEEDBACK`, `ROLL`, `BALANCE`
+* **ROLL 2:** `TIME`, `REPEAT`, `ROLL`, `BALANCE`
+* **FREEZE:** `ATTACK`, `RELEASE`, `DECAY`, `SUSTAIN`, `BALANCE`
+* **CHORUS:** `RATE`, `DEPTH`, `LOW_CUT`, `HIGH_CUT`, `D_LEVEL`, `E_LEVEL`
+* **REVERB:** `TIME`, `PRE_DELAY`, `DENSITY`, `LOW_CUT`, `HIGH_CUT`, `D_LEVEL`, `E_LEVEL`
+* **GATE REVERB:** `TIME`, `PRE_DELAY`, `THRESHOLD`, `LOW_CUT`, `HIGH_CUT`, `D_LEVEL`, `E_LEVEL`
+* **REVERSE REVERB:** `TIME`, `PRE_DELAY`, `GATE_DELAY`, `LOW_CUT`, `HIGH_CUT`, `D_LEVEL`, `E_LEVEL`
+* **BEAT SCATTER:** `TYPE`, `LENGTH`
+* **BEAT REPEAT:** `TYPE`, `LENGTH`
+* **BEAT SHIFT:** `TYPE`, `SHIFT`
+* **VINYL FLICK:** `FLICK`
